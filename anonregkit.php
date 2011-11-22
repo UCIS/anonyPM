@@ -12,9 +12,7 @@
 	// e.g. require("anonregkit.php")
 	if(count(get_included_files()) ==1) {
 		header("Content-Type: text/plain; charset=utf-8");
-		$break=Explode('/',$_SERVER["SCRIPT_NAME"]);
-		$pfile=$break[count($break)-1];
-		readfile($pfile);
+		readfile(__FILE__);
 		exit();
 	}
 	//95CHAR############################################################################95CHAR
@@ -102,9 +100,7 @@
 				}
 
 				// read image
-				$sTempFileName = $_FILES['image']['tmp_name']; // temporary file at server side
-				$oTempFile = fopen($sTempFileName, "r");
-				$sBinaryImage = fread($oTempFile, fileSize($sTempFileName));
+				$sBinaryImage = file_get_contents($_FILES['image']['tmp_name']);
 
 				// Try to read image
 				$nOldErrorReporting = error_reporting(E_ALL & ~(E_WARNING)); // ingore warnings
@@ -180,6 +176,7 @@
 	}
 	
 	$width=$width."px";
+	//Are you sure $link, $tripcode and $text are safe? May want to htmlspecialchars(..., ENT_QUOTES)
 	return "							
 				<div style='
 							width:$width; 
