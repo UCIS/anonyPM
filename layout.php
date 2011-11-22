@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" ></meta>
 <meta charset="UTF-8"/>
 
-<title> TaskBoard</title>
+<title>TaskBoard</title>
 
 <link rel="icon" href="favicon.ico" type="image/x-icon">
 <link rel="shortcut icon" href="favicon.ico" type="image/x-icon"> 
@@ -37,7 +37,7 @@
 					<INPUT type='submit' value='Enter Inbox'> 
 				</FORM>
 				<br>
-				<p><?php echo md5(rand().rand().rand().rand())?></p>
+				<p>Why this? <?php echo md5(rand().rand().rand().rand())?></p>
 				<br>
 				
 				<a href="?x=PAGE+about<?php echo __SID_URL()?>" >About</a> | <a href="?x=PAGE+writemessage<?php echo __SID_URL()?>" >Write Message</a> | <a href="?x=PAGE+addressbook<?php echo __SID_URL()?>" >AddressBook</a> | <a href="?<?php echo __SID_URL()?>#query" >Query</a>
@@ -60,7 +60,7 @@
 			if( isset($_SESSION['loggedin']) and ($_SESSION['loggedin'] == true) ){
 		?>
 				<div class="cloudbox" style="margin: 0 auto; width:100%; padding-top:10px; padding-bottom:10px; ">
-					
+					Is userID safe? shouldn't you htmlentities(urlencode(...)) ?
 					<h3><a href="?x=INBOX<?php echo __SID_URL()?>" >Check Inbox</a> | <a href='?x=PAGE+writemessage&from=<?php echo $_SESSION['userID'];?><?php echo __SID_URL()?>' target='_blank'>Send PM</a> |  <a href="?x=LOGOUT<?php echo __SID_URL()?>" >logout</a> | <a href="?x=NUKE<?php echo __SID_URL()?>" >Nuke/Clear Inbox</a></h3>
 					
 					<br>
@@ -75,6 +75,7 @@
 						
 						echo "<div style='padding:20px; text-align:left; ' >";
 						echo "Also valid (longer == more secure):<br>";
+						//Is it safe? urlencode? htmlentities?
 						echo "(<a href='?x=PAGE+writemessage&to=".$userid_lv1."' target='_blank'>share url</a>) ".$userid_lv1."<br>";
 						echo "(<a href='?x=PAGE+writemessage&to=".$userid_lv2."' target='_blank'>share url</a>) ".$userid_lv2."<br>";
 						echo "(<a href='?x=PAGE+writemessage&to=".$userid_lv3."' target='_blank'>share url</a>) ".$userid_lv3."<br>";
@@ -125,11 +126,13 @@
 		<div class="cloudbox"  style="margin: 0 auto; width:100%; padding-top:10px; padding-bottom:10px; ">
 			<FORM action='?x=send<?php echo __SID_URL()?>' method='post' enctype='multipart/form-data'>
 				<P>
-					Send To*:<br /> <INPUT type='text' size=50 name='to'value='<?php if(isset($_REQUEST['to'])){echo $_REQUEST['to'];}?>'><br />
+					Possible XSS/HTML injection - use htmlentities!
+					Send To*:<br /> <INPUT type='text' size=50 name='to' value='<?php if(isset($_REQUEST['to'])){echo $_REQUEST['to'];}?>'><br />
 					Sender ID or email (optional):<br /> <INPUT type='text' size=50 name='from' value='<?php if(isset($_REQUEST['from'])){echo $_REQUEST['from'];}?>'><br />
 				
 					<!-- 
-					Title*:<br /> <INPUT type='text' size=50 name='title'value='<?php if(isset($_REQUEST['title'])){echo $_REQUEST['title'];}?>'><br />
+					Possible XSS/HTML injection - use htmlentities!
+					Title*:<br /> <INPUT type='text' size=50 name='title' value='<?php if(isset($_REQUEST['title'])){echo $_REQUEST['title'];}?>'><br />
 					-->
 					Message*:<br />	<textarea class='' rows=10 cols=50 name='message'><?php if(isset($_REQUEST['message'])){echo htmlentities($_REQUEST['message'],null, 'utf-8');}?></textarea><br />			
 					<!-- 
