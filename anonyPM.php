@@ -49,7 +49,7 @@ class anonyPM {
 					$sBinaryThumbnail = ob_get_contents(); // the raw jpeg image data. 
 				ob_end_clean(); // Dump the stdout so it does not screw other output.
 				
-				//imagedestroy($new); //?? do we really need to?
+				//imagedestroy($new); //?? do we really need to? - Probably not, but it might be good to do it anyway (may release some memory)
 			}else{$sBinaryThumbnail = NULL;}
 		//Create the array we will store in the database
         $data = array(
@@ -97,11 +97,13 @@ class anonyPM {
      * @param array $input 
      */
     public function delTaskBy($delType, $input=array()) {
-        if(!is_array($input)) $input = array(); // Input array is always zero
-
+        if(!is_array($input)) $input = array(); // Input array is always zero Shouldn't you just return? Can't do anything if no input arguments given.
+	$sql = array(); //initialize variables to prevent warnings
+	$sql_data = array();
+	$sql_type = array();
         switch($delType){
             case 'Delete a post':    // $input <-- post ID
-                $s_id = $input[0];
+                $s_id = $input[0]; //Input may be an empty array - $input[0] may not exist!
                 $sql[] = "DELETE FROM messages WHERE md5id = ?";
 				$data[] = array( $s_id );
                 $sql_data[] = array(
@@ -114,7 +116,7 @@ class anonyPM {
                 break;
 
             case 'Delete all post by trip':    // $input <-- Tripcode name ##DANGER## This will delete everything done by a poster
-                $s_pass = $input[0];
+                $s_pass = $input[0]; //Input may be an empty array - $input[0] may not exist!
                 $sql[] = "DELETE FROM messages WHERE toid =  ?";
 				$sql_data[] = array(
                     'tripcode' => $s_pass,
@@ -125,8 +127,8 @@ class anonyPM {
                 break;
 
             case 'Delete single task with normal password': // $input <-- Task ID, Task Password
-                $s_ID = $input[0];
-                $s_pass = $input[1] ;
+                $s_ID = $input[0]; //Input may be an empty array - $input[0] may not exist!
+                $s_pass = $input[1] ; //Input may be an empty array - $input[1] may not exist!
                 $sql[] = "DELETE FROM messages WHERE toid = ? AND md5id= ?";
 				$sql_data[] = array(
                     'id' => $s_ID,
@@ -143,9 +145,13 @@ class anonyPM {
                 break;
         }
 		     
-			 
+	//Why don't you run the queries immediately after constructing them? Or use an associative array like
+	//array(
+	//	array('sql' => 'DELETE ...', data => array($s_ID), 'type' => array('INT')),
+	//	array('sql' => 'DELETE ...', data => array($s_ID), 'type' => array('INT')),
+	//);
         try {
-            foreach($sql as  $row_num => $s) {
+            foreach($sql as  $row_num => $s) { //Why foreach anyway? Why arrays? There's only one (or no) query to execute.
                 Database::query($s,$sql_data[$row_num],$sql_type[$row_num]);
                 echo 'Delete command sent';
             }
@@ -164,15 +170,16 @@ class anonyPM {
     public function getFileByID($id='',$mode='image'){
 		switch($mode){
 			case "image":
-				$sql = "SELECT DISTINCT messages.image, messages.imagetype FROM messages WHERE messages.id = $id LIMIT 1";
+				$sql = "SELECT DISTINCT messages.image, messages.imagetype FROM messages WHERE messages.id = $id LIMIT 1"; //Bad! Don't inline variables in your query, use placeholders!
 				break;
 			case "thumbnail":
-				$sql = "SELECT DISTINCT messages.thumbnail, messages.imagetype FROM messages WHERE messages.id = $id LIMIT 1";
+				$sql = "SELECT DISTINCT messages.thumbnail, messages.imagetype FROM messages WHERE messages.id = $id LIMIT 1"; //Bad! Don't inline variables in your query, use placeholders!
 				break;
 				
 			case "file":
-				$sql = "SELECT DISTINCT messages.image FROM messages WHERE messages.id = $id LIMIT 1";
+				$sql = "SELECT DISTINCT messages.image FROM messages WHERE messages.id = $id LIMIT 1"; //Bad! Don't inline variables in your query, use placeholders!
 				break;
+			//What happens in other cases? Should throw exception or return and not execure the query!
 		}
 
 		//Input value
@@ -267,12 +274,12 @@ class anonyPM {
 		*/
 		
 		// string should be placed into an array instead.
-		if (is_string($toID_array)) {$toID_array = array($toID_array);}
+		if (is_string($toID_array)) {$toID_array = array($toID_array);} //better use !is_array here?
 		// if not array, then make it an array
         if(!is_array($toID_array)) {$toID_array = array();}
 
         if(!empty($toID_array)){
-            $sql_where_hashid = "toID IN ('".implode("','", $toID_array)."')";
+            $sql_where_hashid = "toID IN ('".implode("','", $toID_array)."')"; //Should perhaps check if it's really numbers to prevent SQL injection
         } else {
             $sql_where_hashid = '';
         }
@@ -281,12 +288,12 @@ class anonyPM {
 			Prepare fromID
 		*/
 		// string should be placed into an array instead.
-		if (is_string($fromID_array)) {$fromID_array = array($fromID_array);}
+		if (is_string($fromID_array)) {$fromID_array = array($fromID_array);} //Why not use !is_array?
 		// if not array, then make it an array
         if(!is_array($fromID_array)) {$fromID_array = array();}
 
         if(!empty($fromID_array) ){
-            $sql_where_hashid = $sql_where_hashid." AND fromID IN ('".implode("','", $fromID_array)."')";
+            $sql_where_hashid = $sql_where_hashid." AND fromID IN ('".implode("','", $fromID_array)."')"; //Should perhaps check if it's really numbers to prevent SQL injection
         }
 		
 		/*
@@ -304,9 +311,11 @@ class anonyPM {
 			// enforce alphanumeric answer for md5id, to prevent sql injection
 			$postid = PREG_REPLACE("/[^0-9a-zA-Z]/i", '', $postid);
 			// add the post finding routine
+			//Check if $toID_array is really safe
 			$sql_where_hashid = "( toID IN ('".implode("','", $toID_array)."') AND md5id = '".$postid."' )";
 		}
 
+	//Might be better to use placeholders instead of inline variables in the above IN conditions
         /*Would use this except sqlite doesnt support it... : OUTER JOIN tags ON messages.id = tags.task_id */
         $sql = "SELECT *
             FROM messages
@@ -318,7 +327,7 @@ class anonyPM {
         try {
             $rs = Database::query($sql, array($limit) , array("INT") );
         } catch (Exception $e){
-            return array();
+            return array(); //Exception usually indicates some serious problem which should not be ignored!
         }
 		
 
@@ -347,7 +356,7 @@ class anonyPM {
         if(!is_array($toID_array)) {$toID_array = array();}
 
         if(!empty($toID_array)){
-            $sql_where_hashid = "toID IN ('".implode("','", $toID_array)."')";
+            $sql_where_hashid = "toID IN ('".implode("','", $toID_array)."')"; //Use placeholders or at least check the array to prevent injection
         } else {
             $sql_where_hashid = '';
         }
@@ -361,21 +370,21 @@ class anonyPM {
         if(!is_array($fromID_array)) {$fromID_array = array();}
 
         if(!empty($fromID_array) ){
-            $sql_where_hashid = $sql_where_hashid." AND fromID IN ('".implode("','", $fromID_array)."')";
+            $sql_where_hashid = $sql_where_hashid." AND fromID IN ('".implode("','", $fromID_array)."')"; //Use placeholders or at least check the array to prevent injection
         }
 		
 		/*
 			delete post that was sent to a particular person as well (Id from self to destination)
 		*/
         if(!empty($toID_array) && !empty($fromID_array) && ($mode=="show sent post") ){
-            $sql_where_hashid = $sql_where_hashid." OR ( toID IN ('".implode("','", $fromID_array)."') AND fromID IN ('".implode("','", $toID_array)."') )";
+            $sql_where_hashid = $sql_where_hashid." OR ( toID IN ('".implode("','", $fromID_array)."') AND fromID IN ('".implode("','", $toID_array)."') )"; //Use placeholders or at least check the arrays to prevent injection
         }
 		
 		/*
 			delete EVERY sent post (used in nuke mode)
 		*/
         if(!empty($toID_array) && ($mode=="all sent post as well") ){
-            $sql_where_hashid = $sql_where_hashid." OR ( fromID IN ('".implode("','", $toID_array)."') )";
+            $sql_where_hashid = $sql_where_hashid." OR ( fromID IN ('".implode("','", $toID_array)."') )"; //Use placeholders or at least check the array to prevent injection
         }
 		
 		/*
@@ -386,18 +395,19 @@ class anonyPM {
 			// enforce alphanumeric answer for md5id, to prevent sql injection
 			$postid = PREG_REPLACE("/[^0-9a-zA-Z]/i", '', $postid);
 			// add the post finding routine
-			$sql_where_hashid = "( toID IN ('".implode("','", $toID_array)."') AND md5id = '".$postid."' )";
+			$sql_where_hashid = "( toID IN ('".implode("','", $toID_array)."') AND md5id = '".$postid."' )"; //Use placeholders or at least check the array to prevent injection
 		}
 
         /*Would use this except sqlite doesnt support it... : OUTER JOIN tags ON messages.id = tags.task_id */
         $sql = "DELETE FROM messages WHERE 
 				$sql_where_hashid
 			";
+			//Should probably never DELETE if there is no where component; and maybe LIMIT 1 just to be sure
 				
         try {
             $rs = Database::query($sql);
         } catch (Exception $e){
-            return array();
+            return array(); //Should not ignore an exception!
         }
 		
 
@@ -430,6 +440,7 @@ class anonyPM {
 			case "mysql":
 				$autoIncrementSyntax = "INTEGER PRIMARY KEY NOT NULL AUTO_INCREMENT";
 				break;
+			//How about other cases? throw an exception?
 		}
 
 		$sql[] = <<<SQL
