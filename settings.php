@@ -2,6 +2,7 @@
 	// Settings
 	
 	// General configuration
+	//Might be better to default to false and perhaps detect whether the DB exists to protect admin
 	$__initEnable = true; // Disable After Install (set to 'false' rather than 'true')
 	$__debug = false; // Dev mode
 	$__hiddenServer = false; // Hidden server should not use IP tracking as users all appear local (e.g. in tor)
